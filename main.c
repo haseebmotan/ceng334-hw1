@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/select.h>
 
 #include "message.h"
 #include "logging.h"
@@ -34,7 +35,7 @@ int sum(char *arr, int len)
 int main(int argc, char *argv[])
 {
     // Parse the input
-    int map_width, map_height, obstacle_count, bomber_count, *bombers_alive, bombers_alive_count = 0, bomb_count, *bombs_active, bombs_active_count = 0, winner = -1;
+    int map_width, map_height, obstacle_count, bomber_count, *bombers_alive, bombers_alive_count = 0, bomb_count = 0 /*bug was here*/, *bombs_active, bombs_active_count = 0, winner = -1;
     obsd *obstacles;
     bomber *bombers;
     pid_t *bomber_pids;
@@ -128,10 +129,10 @@ int main(int argc, char *argv[])
         }
         else
         {
-            dup2(bomber_fds[i][0], 0);
-            close(bomber_fds[i][0]);
-            dup2(bomber_fds[i][1], 1);
+            dup2(bomber_fds[i][1], 0);
             close(bomber_fds[i][1]);
+            dup2(bomber_fds[i][0], 1);
+            close(bomber_fds[i][0]);
 
             execv("./bomber", bombers[i].argv);
         }
@@ -321,6 +322,15 @@ int main(int argc, char *argv[])
         for (int i = 0; i < bomber_count; i++)
         {
             struct pollfd in = {bomber_fds[i][0]};
+            
+            // fd_set rfd;
+            // struct timeval tv = {0, 0};
+
+            // FD_ZERO(&rfd);
+            // FD_SET(bomber_fds[i][0], &rfd);
+            
+            // if (bombers_alive[i] && select(1, &rfd, NULL, NULL, &tv))
+
             if (bombers_alive[i] && poll(&in, 1, 0))
             {
                 im in_message;
@@ -426,10 +436,10 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        dup2(bomber_fds[bomb_count - 1][0], 0);
-                        close(bomber_fds[bomb_count - 1][0]);
-                        dup2(bomber_fds[bomb_count - 1][1], 1);
+                        dup2(bomber_fds[bomb_count - 1][1], 0);
                         close(bomber_fds[bomb_count - 1][1]);
+                        dup2(bomber_fds[bomb_count - 1][0], 1);
+                        close(bomber_fds[bomb_count - 1][0]);
 
                         char *arg1;
                         int arg1_len = snprintf(NULL, 0, "%ld", in_message.data.bomb_info.interval);
