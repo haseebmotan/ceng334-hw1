@@ -123,7 +123,8 @@ int main(int argc, char *argv[])
 
         if (bomber_pids[i] = fork())
         {
-            ;
+            bombers_alive[i] = 1;
+            bombers_alive_count++;
         }
         else
         {
@@ -132,8 +133,6 @@ int main(int argc, char *argv[])
             dup2(bomber_fds[i][1], 1);
             close(bomber_fds[i][1]);
 
-            bombers_alive[i] = 1;
-            bombers_alive_count++;
             execv("./bomber", bombers[i].argv);
         }
     }
@@ -553,7 +552,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        usleep(1000);
+        // usleep(1000);
     }
 
 }
