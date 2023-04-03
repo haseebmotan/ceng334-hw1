@@ -154,6 +154,10 @@ int main(int argc, char *argv[])
                     im in_message;
                     read_data(bomb_fds[i][0], &in_message);
 
+                    imp in_message_print = {bomb_pids[i], &in_message};
+
+                    print_output(&in_message_print, NULL, NULL, NULL);
+
                     om out_message;
 
                     if (in_message.type == BOMB_EXPLODE)
@@ -181,6 +185,10 @@ int main(int argc, char *argv[])
                                     obstacle_map[start_y][x]--;
                                 }
 
+                                obsd obstacle_data = {{x, start_y}, obstacle_map[start_y][x]};
+
+                                print_output(NULL, NULL, &obstacle_data, NULL);
+
                                 break;
                             }
 
@@ -201,6 +209,10 @@ int main(int argc, char *argv[])
                                 {
                                     obstacle_map[start_y][x]--;
                                 }
+
+                                obsd obstacle_data = {{x, start_y}, obstacle_map[start_y][x]};
+
+                                print_output(NULL, NULL, &obstacle_data, NULL);
 
                                 break;
                             }
@@ -223,6 +235,10 @@ int main(int argc, char *argv[])
                                     obstacle_map[y][start_x]--;
                                 }
 
+                                obsd obstacle_data = {{start_x, y}, obstacle_map[y][start_x]};
+
+                                print_output(NULL, NULL, &obstacle_data, NULL);
+
                                 break;
                             }
 
@@ -243,6 +259,10 @@ int main(int argc, char *argv[])
                                 {
                                     obstacle_map[y][start_x]--;
                                 }
+
+                                obsd obstacle_data = {{start_x, y}, obstacle_map[y][start_x]};
+
+                                print_output(NULL, NULL, &obstacle_data, NULL);
 
                                 break;
                             }
@@ -307,6 +327,10 @@ int main(int argc, char *argv[])
                 im in_message;
                 read_data(bomber_fds[i][0], &in_message);
 
+                imp in_message_print = {bomber_pids[i], &in_message};
+
+                print_output(&in_message_print, NULL, NULL, NULL);
+
                 om out_message;
 
                 // If explosion killed bomber, send it a death message
@@ -317,6 +341,10 @@ int main(int argc, char *argv[])
                     out_message.type = (i == winner) ? BOMBER_WIN : BOMBER_DIE;
 
                     send_message(bomber_fds[i][1], &out_message);
+
+                    omp out_message_print = {bomber_pids[i], &out_message};
+
+                    print_output(NULL, &out_message_print, NULL, NULL);
 
                     int child_status;
                     waitpid(bomber_pids[i], &child_status, 0);
@@ -354,6 +382,10 @@ int main(int argc, char *argv[])
                     out_message.data.new_position = bombers[i].position;
 
                     send_message(bomber_fds[i][1], &out_message);
+
+                    omp out_message_print = {bomber_pids[i], &out_message};
+
+                    print_output(NULL, &out_message_print, NULL, NULL);
                 }
                 else if (in_message.type == BOMBER_PLANT)
                 {
@@ -384,6 +416,10 @@ int main(int argc, char *argv[])
                     }
                     
                     send_message(bomber_fds[i][1], &out_message);
+
+                    omp out_message_print = {bomber_pids[i], &out_message};
+
+                    print_output(NULL, &out_message_print, NULL, NULL);
 
                     if (bomb_pids[bomb_count - 1] = fork())
                     {
@@ -509,9 +545,15 @@ int main(int argc, char *argv[])
 
                     // Send message with object data
                     send_object_data(bomber_fds[i][1], object_count, objects);
+                    
+                    omp out_message_print = {bomber_pids[i], &out_message};
+
+                    print_output(NULL, &out_message_print, NULL, objects);
                 }
             }
         }
+
+        usleep(1000);
     }
 
 }
