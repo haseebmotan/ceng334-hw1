@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                struct pollfd in = {bomb_fds[i][0]};
+                struct pollfd in = {bomb_fds[i][0], POLLIN};
                 if (poll(&in, 1, 0))
                 {
                     im in_message;
@@ -321,14 +321,16 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < bomber_count; i++)
         {
-            struct pollfd in = {bomber_fds[i][0]};
+            struct pollfd in;
+            in.fd = bomber_fds[i][0];
+            in.events = POLLIN;
             
             // fd_set rfd;
             // struct timeval tv = {0, 0};
 
             // FD_ZERO(&rfd);
             // FD_SET(bomber_fds[i][0], &rfd);
-            
+
             // if (bombers_alive[i] && select(1, &rfd, NULL, NULL, &tv))
 
             if (bombers_alive[i] && poll(&in, 1, 0))
@@ -436,10 +438,10 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        dup2(bomber_fds[bomb_count - 1][1], 0);
-                        close(bomber_fds[bomb_count - 1][1]);
-                        dup2(bomber_fds[bomb_count - 1][0], 1);
-                        close(bomber_fds[bomb_count - 1][0]);
+                        dup2(bomb_fds[bomb_count - 1][1], 0);
+                        close(bomb_fds[bomb_count - 1][1]);
+                        dup2(bomb_fds[bomb_count - 1][0], 1);
+                        close(bomb_fds[bomb_count - 1][0]);
 
                         char *arg1;
                         int arg1_len = snprintf(NULL, 0, "%ld", in_message.data.bomb_info.interval);
@@ -562,7 +564,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // usleep(1000);
+        usleep(1000);
     }
 
 }
