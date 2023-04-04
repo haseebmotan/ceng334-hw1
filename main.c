@@ -35,13 +35,13 @@ int sum(char *arr, int len)
 int main(int argc, char *argv[])
 {
     // Parse the input
-    int map_width, map_height, obstacle_count, bomber_count, *bombers_alive, bombers_alive_count = 0, bomb_count = 0 /*bug was here*/, *bombs_active, bombs_active_count = 0, winner = -1;
+    int map_width, map_height, obstacle_count, bomber_count, *bombers_alive, bombers_alive_count = 0, bomb_count = 0 /*bug was here*/, *bombs_active = NULL, bombs_active_count = 0, winner = -1;
     obsd *obstacles;
     bomber *bombers;
     pid_t *bomber_pids;
-    bd *bombs;
-    pid_t *bomb_pids;
-    coordinate *bomb_position;
+    bd *bombs = NULL;
+    pid_t *bomb_pids = NULL;
+    coordinate *bomb_position = NULL;
 
     scanf("%d %d %d %d", &map_width, &map_height, &obstacle_count, &bomber_count);
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 
     // Create pipes for bomber processes and fork them
     int (*bomber_fds)[2];
-    int (*bomb_fds)[2];
+    int (*bomb_fds)[2] = NULL;
 
     bomber_fds = malloc(bomber_count * sizeof(int) * 2);
 
@@ -126,15 +126,16 @@ int main(int argc, char *argv[])
         {
             bombers_alive[i] = 1;
             bombers_alive_count++;
+            close(bomber_fds[i][1]);
         }
         else
         {
-            dup2(bomber_fds[i][1], 0);
-            close(bomber_fds[i][1]);
-            dup2(bomber_fds[i][0], 1);
             close(bomber_fds[i][0]);
+            dup2(bomber_fds[i][1], 0);
+            dup2(bomber_fds[i][1], 1);
+            close(bomber_fds[i][1]);
 
-            execv("./bomber", bombers[i].argv);
+            execv(bombers[i].argv[0], bombers[i].argv);
         }
     }
 
@@ -149,7 +150,7 @@ int main(int argc, char *argv[])
             else
             {
                 struct pollfd in = {bomb_fds[i][0], POLLIN};
-                if (poll(&in, 1, 0))
+                if (poll(&in, 1, 0) > 0)
                 {
                     im in_message;
                     read_data(bomb_fds[i][0], &in_message);
@@ -170,7 +171,7 @@ int main(int argc, char *argv[])
                         waitpid(bomb_pids[i], &child_status, 0);
 
                         close(bomb_fds[i][0]);
-                        close(bomb_fds[i][1]);
+                        // close(bomb_fds[i][1]); Already closed after pipeing
 
                         // OBJECTS WITHIN RADIUS
 
@@ -333,7 +334,7 @@ int main(int argc, char *argv[])
 
             // if (bombers_alive[i] && select(1, &rfd, NULL, NULL, &tv))
 
-            if (bombers_alive[i] && poll(&in, 1, 0))
+            if (bombers_alive[i] && poll(&in, 1, 0) > 0)
             {
                 im in_message;
                 read_data(bomber_fds[i][0], &in_message);
@@ -351,7 +352,7 @@ int main(int argc, char *argv[])
                     bombers_alive_count--;
                     out_message.type = (i == winner) ? BOMBER_WIN : BOMBER_DIE;
 
-                    send_message(bomber_fds[i][1], &out_message);
+                    send_message(bomber_fds[i][0], &out_message);
 
                     omp out_message_print = {bomber_pids[i], &out_message};
 
@@ -361,7 +362,7 @@ int main(int argc, char *argv[])
                     waitpid(bomber_pids[i], &child_status, 0);
 
                     close(bomber_fds[i][0]);
-                    close(bomber_fds[i][1]);
+                    // close(bomber_fds[i][1]); Already closed after pipeing
 
                     continue;
                 }
@@ -371,7 +372,11 @@ int main(int argc, char *argv[])
                     out_message.type = BOMBER_LOCATION;
                     out_message.data.new_position = bombers[i].position;
 
-                    send_message(bomber_fds[i][1], &out_message);
+                    send_message(bomber_fds[i][0], &out_message);
+
+                    omp out_message_print = {bomber_pids[i], &out_message};
+
+                    print_output(NULL, &out_message_print, NULL, NULL);
                 }
                 else if (in_message.type == BOMBER_MOVE)
                 {
@@ -392,7 +397,7 @@ int main(int argc, char *argv[])
                     out_message.type = BOMBER_LOCATION;
                     out_message.data.new_position = bombers[i].position;
 
-                    send_message(bomber_fds[i][1], &out_message);
+                    send_message(bomber_fds[i][0], &out_message);
 
                     omp out_message_print = {bomber_pids[i], &out_message};
 
@@ -407,7 +412,9 @@ int main(int argc, char *argv[])
                         bomb_count++;
 
                         bombs = realloc(bombs, bomb_count * sizeof(bd));
-                        bomb_position = realloc(bomb_position, bomb_count * sizeof(bd));
+                        bomb_position = realloc(bomb_position, bomb_count * sizeof(coordinate));
+                        bombs_active = realloc(bombs_active, bomb_count * sizeof(int));
+                        bomb_pids = realloc(bomb_pids, bomb_count * sizeof(pid_t));
 
                         bomb_fds = realloc(bomb_fds, bomb_count * 2 * sizeof(int));
                         PIPE(bomb_fds[bomb_count - 1]);
@@ -426,22 +433,22 @@ int main(int argc, char *argv[])
                         out_message.data.planted = 0;
                     }
                     
-                    send_message(bomber_fds[i][1], &out_message);
+                    send_message(bomber_fds[i][0], &out_message);
 
                     omp out_message_print = {bomber_pids[i], &out_message};
 
                     print_output(NULL, &out_message_print, NULL, NULL);
 
-                    if (bomb_pids[bomb_count - 1] = fork())
+                    if (out_message.data.planted && (bomb_pids[bomb_count - 1] = fork()))
                     {
-                        ;
+                        close(bomb_fds[bomb_count - 1][1]);
                     }
                     else
                     {
-                        dup2(bomb_fds[bomb_count - 1][1], 0);
-                        close(bomb_fds[bomb_count - 1][1]);
-                        dup2(bomb_fds[bomb_count - 1][0], 1);
                         close(bomb_fds[bomb_count - 1][0]);
+                        dup2(bomb_fds[bomb_count - 1][1], 0);
+                        dup2(bomb_fds[bomb_count - 1][1], 1);
+                        close(bomb_fds[bomb_count - 1][1]);
 
                         char *arg1;
                         int arg1_len = snprintf(NULL, 0, "%ld", in_message.data.bomb_info.interval);
@@ -552,10 +559,10 @@ int main(int argc, char *argv[])
 
                     // Send message with object count
                     out_message.data.object_count = object_count;
-                    send_message(bomber_fds[i][1], &out_message);
+                    send_message(bomber_fds[i][0], &out_message);
 
                     // Send message with object data
-                    send_object_data(bomber_fds[i][1], object_count, objects);
+                    send_object_data(bomber_fds[i][0], object_count, objects);
                     
                     omp out_message_print = {bomber_pids[i], &out_message};
 
