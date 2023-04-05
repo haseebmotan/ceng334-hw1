@@ -22,7 +22,7 @@ typedef struct bomber
 
 int sum(char *arr, int len)
 {
-    int sum;
+    int sum = 0;
 
     while (len--)
     {
@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
                         }
 
                         // Check for the case where only one bomber remains after explosion
-                        unsigned int remaining_bombers;
+                        unsigned int remaining_bombers = 0;
                         for (int i = 0; i < map_height; i++)
                         {
                             remaining_bombers += sum(bomber_map[i], map_width);
