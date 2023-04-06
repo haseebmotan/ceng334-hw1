@@ -45,6 +45,11 @@ int main(int argc, char *argv[])
 
     scanf("%d %d %d %d", &map_width, &map_height, &obstacle_count, &bomber_count);
 
+    if (bomber_count == 1)
+    {
+        winner = 0;
+    }
+
     // CREATE MAPS
 
     char **bomber_map = malloc(map_height * sizeof(char *));
@@ -176,7 +181,7 @@ int main(int argc, char *argv[])
                         // OBJECTS WITHIN RADIUS
 
                         // TOP:  in order of decreasing i (according to array indexing)
-                        for (unsigned int x = bomb_position[i].x, start_y = bomb_position[i].y,  end_y = start_y - bombs[i].radius; start_y >= 0 && start_y >= end_y; start_y--)
+                        for (int x = bomb_position[i].x, start_y = bomb_position[i].y,  end_y = start_y - bombs[i].radius; start_y >= 0 && start_y >= end_y; start_y--)
                         {
                             // Check for obtacles
                             if (obstacle_map[start_y][x])
@@ -201,7 +206,7 @@ int main(int argc, char *argv[])
                         }
 
                         // DOWN: in order of increasing i (according to array indexing)
-                        for (unsigned int x = bomb_position[i].x, start_y = bomb_position[i].y,  end_y = start_y + bombs[i].radius; start_y < map_height && start_y <= end_y; start_y++)
+                        for (int x = bomb_position[i].x, start_y = bomb_position[i].y,  end_y = start_y + bombs[i].radius; start_y < map_height && start_y <= end_y; start_y++)
                         {
                             // Check for obtacles
                             if (obstacle_map[start_y][x])
@@ -226,7 +231,7 @@ int main(int argc, char *argv[])
                         }
 
                         // RIGHT: in order of increasing j (according to array indexing)
-                        for (unsigned int start_x = bomb_position[i].x, y = bomb_position[i].y,  end_x = start_x - bombs[i].radius; start_x <= map_width && start_x <= end_x; start_x++)
+                        for (int start_x = bomb_position[i].x, y = bomb_position[i].y,  end_x = start_x - bombs[i].radius; start_x <= map_width && start_x <= end_x; start_x++)
                         {
                             // Check for obtacles
                             if (obstacle_map[y][start_x])
@@ -251,7 +256,7 @@ int main(int argc, char *argv[])
                         }
 
                         // LEFT: in order of decreasing j (according to array indexing)
-                        for (unsigned int start_x = bomb_position[i].x, y = bomb_position[i].y,  end_x = start_x - bombs[i].radius; start_x >= 0 && start_x >= end_x; start_x--)
+                        for (int start_x = bomb_position[i].x, y = bomb_position[i].y,  end_x = start_x - bombs[i].radius; start_x >= 0 && start_x >= end_x; start_x--)
                         {
                             // Check for obtacles
                             if (obstacle_map[y][start_x])
@@ -294,11 +299,11 @@ int main(int argc, char *argv[])
                             }
                         }
 
-                        // Check for the case where no bomber remains after explosion
-                        if (remaining_bombers == 0)
+                        // Check for the case where no bomber remains after explosion and winner is not known
+                        if (remaining_bombers == 0 && winner == -1)
                         {
                             int bomber_furthest_away;
-                            unsigned int distance = -1;
+                            int distance = -1;
 
                             for (int j = 0; i < bomber_count; i++)
                             {
@@ -382,7 +387,7 @@ int main(int argc, char *argv[])
                 {
                     if (in_message.data.target_position.x >= 0 && in_message.data.target_position.x < map_width && in_message.data.target_position.y >= 0 && in_message.data.target_position.y < map_height)
                     {
-                        if (!obstacle_map[in_message.data.target_position.y][in_message.data.target_position.x])
+                        if (!obstacle_map[in_message.data.target_position.y][in_message.data.target_position.x] && !bomber_map[in_message.data.target_position.y][in_message.data.target_position.x])
                         {
                             if ((abs(in_message.data.target_position.x - bombers[i].position.x) + abs(in_message.data.target_position.y - bombers[i].position.y)) == 1)
                             {
@@ -466,7 +471,7 @@ int main(int argc, char *argv[])
                     od objects[24];
 
                     // TOP: in order of decreasing i (according to array indexing)
-                    for (unsigned int x = bombers[i].position.x, start_y = bombers[i].position.y - 1,  end_y = start_y - 3; start_y >= 0 && start_y > end_y; start_y--)
+                    for (int x = bombers[i].position.x, start_y = bombers[i].position.y - 1,  end_y = start_y - 3; start_y >= 0 && start_y > end_y; start_y--)
                     {
                         // Check for obtacles
                         if (obstacle_map[start_y][x])
@@ -489,7 +494,7 @@ int main(int argc, char *argv[])
                     }
 
                     // DOWN: in order of increasing i (according to array indexing)
-                    for (unsigned int x = bombers[i].position.x, start_y = bombers[i].position.y + 1,  end_y = start_y + 3; start_y < map_height && start_y < end_y; start_y++)
+                    for (int x = bombers[i].position.x, start_y = bombers[i].position.y + 1,  end_y = start_y + 3; start_y < map_height && start_y < end_y; start_y++)
                     {
                         // Check for obtacles
                         if (obstacle_map[start_y][x])
@@ -512,7 +517,7 @@ int main(int argc, char *argv[])
                     }
 
                     // RIGHT: in order of increasing j (according to array indexing)
-                    for (unsigned int start_x = bombers[i].position.x + 1, y = bombers[i].position.y,  end_x = start_x + 3; start_x < map_width && start_x < end_x; start_x++)
+                    for (int start_x = bombers[i].position.x + 1, y = bombers[i].position.y,  end_x = start_x + 3; start_x < map_width && start_x < end_x; start_x++)
                     {
                         // Check for obtacles
                         if (obstacle_map[y][start_x])
@@ -535,7 +540,7 @@ int main(int argc, char *argv[])
                     }
 
                     // LEFT: in order of decreasing j (according to array indexing)
-                    for (unsigned int start_x = bombers[i].position.x - 1, y = bombers[i].position.y,  end_x = start_x - 3; start_x >=0 && start_x > end_x; start_x--)
+                    for (int start_x = bombers[i].position.x - 1, y = bombers[i].position.y,  end_x = start_x - 3; start_x >=0 && start_x > end_x; start_x--)
                     {
                         // Check for obtacles
                         if (obstacle_map[y][start_x])
@@ -572,6 +577,12 @@ int main(int argc, char *argv[])
         }
 
         usleep(1000);
+    }
+
+    while (bombs_active_count--)
+    {
+        int child_status;
+        wait(&child_status);
     }
 
 }
