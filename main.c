@@ -20,7 +20,7 @@ typedef struct bomber
     char **argv;
 } bomber;
 
-int sum(char *arr, int len)
+int sum(int *arr, int len)
 {
     int sum = 0;
 
@@ -30,6 +30,49 @@ int sum(char *arr, int len)
     }
 
     return sum;
+}
+
+void shift_left_ints(int *arr, unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index] = arr[++index];
+    }
+}
+
+void shift_left_pids(pid_t *arr, unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index] = arr[++index];
+    }
+}
+
+void shift_left_coors(coordinate *arr, unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index] = arr[++index];
+    }
+}
+
+void shift_left_bomb(bd *arr, unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index] = arr[++index];
+    }
+}
+
+void shift_left_fds(int (*arr)[2], unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index][0] = arr[index + 1][0];
+        arr[index][1] = arr[index + 1][1];
+        
+        index++;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -52,16 +95,16 @@ int main(int argc, char *argv[])
 
     // CREATE MAPS
 
-    char **bomber_map = malloc(map_height * sizeof(char *));
+    int **bomber_map = malloc(map_height * sizeof(int *));
     for (int i = 0; i < map_height; i++)
     {
-        bomber_map[i] = calloc(map_width, sizeof(char));
+        bomber_map[i] = calloc(map_width, sizeof(int));
     }
 
-    char **bomb_map = malloc(map_height * sizeof(char *));
+    int **bomb_map = malloc(map_height * sizeof(int *));
     for (int i = 0; i < map_height; i++)
     {
-        bomb_map[i] = calloc(map_width, sizeof(char));
+        bomb_map[i] = calloc(map_width, sizeof(int));
     }
 
     int **obstacle_map = malloc(map_height * sizeof(int *));
@@ -320,6 +363,20 @@ int main(int argc, char *argv[])
 
                             winner = bomber_furthest_away;
                         }
+
+                        shift_left_bomb(bombs, i, bomb_count);
+                        shift_left_fds(bomb_fds, i, bomb_count);
+                        shift_left_ints(bombs_active, i, bomb_count);
+                        shift_left_pids(bomb_pids, i, bomb_count);
+                        shift_left_coors(bomb_position, i, bomb_count);
+                        
+                        bomb_count--;
+
+                        bombs = realloc(bombs, bomb_count * sizeof(bd));
+                        bomb_fds = realloc(bomb_fds, bomb_count * sizeof(int) * 2);
+                        bombs_active = realloc(bombs_active, bomb_count * sizeof(int));
+                        bomb_pids = realloc(bomb_pids, bomb_count * sizeof(pid_t));
+                        bomb_position = realloc(bomb_position, bomb_count * sizeof(coordinate));
                     }
                 }
             }
