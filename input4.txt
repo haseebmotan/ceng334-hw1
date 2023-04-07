@@ -1,0 +1,51 @@
+30 30 10 20
+0 0 4
+0 5 5
+0 10 6
+0 15 7
+0 20 8
+10 0 4
+15 0 5
+20 0 6
+25 0 7
+29 0 8
+1 1 4
+./execs/bomber_inek 1000 30 30
+2 2 4
+./execs/bomber_inek 1000 30 30
+3 3 4
+./execs/bomber_inek 1000 30 30
+4 4 4
+./execs/bomber_inek 1000 30 30
+5 5 4
+./execs/bomber_inek 1000 30 30
+6 6 4
+./execs/bomber_inek 1000 30 30
+7 7 4
+./execs/bomber_inek 1000 30 30
+8 8 4
+./execs/bomber_inek 1000 30 30
+9 9 4
+./execs/bomber_inek 1000 30 30
+10 10 4
+./execs/bomber_inek 1000 30 30
+11 11 4
+./execs/bomber_inek 1000 30 30
+12 12 4
+./execs/bomber_inek 1000 30 30
+13 13 4
+./execs/bomber_inek 1000 30 30
+14 14 4
+./execs/bomber_inek 1000 30 30
+15 15 4
+./execs/bomber_inek 1000 30 30
+16 16 4
+./execs/bomber_inek 1000 30 30
+17 17 4
+./execs/bomber_inek 1000 30 30
+18 18 4
+./execs/bomber_inek 1000 30 30
+19 19 4
+./execs/bomber_inek 1000 30 30
+20 20 4
+./execs/bomber_inek 1000 30 30
