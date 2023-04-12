@@ -1,0 +1,13 @@
+30 30 4 4
+12 11 -1
+23 15 4
+12 15 -1
+25 15 4
+0 0 4
+./execs/bomber_inek 500 30 30
+29 29 4
+./execs/bomber_inek 500 30 30
+0 29 4
+./execs/bomber_inek 500 30 30
+29 0 4
+./execs/bomber_inek 500 30 30
