@@ -692,10 +692,54 @@ int main(int argc, char *argv[])
     free(bomber_map);
     free(obstacle_map);
 
-    while (bombs_active_count--)
+    while (bombs_active_count)
     {
-        int child_status;
-        wait(&child_status);
+        for (int i = 0; i < bomb_count; i++)
+        {
+            if (!bombs_active[i])
+            {
+                continue;
+            }
+            else
+            {
+                struct pollfd in = {bomb_fds[i][0], POLLIN};
+                if (poll(&in, 1, 0) > 0)
+                {
+                    im in_message;
+                    read_data(bomb_fds[i][0], &in_message);
+
+                    imp in_message_print = {bomb_pids[i], &in_message};
+
+                    print_output(&in_message_print, NULL, NULL, NULL);
+
+                    if (in_message.type == BOMB_EXPLODE)
+                    {
+                        // Deactivate bomb
+                        bombs_active[i] = 0;
+                        bombs_active_count--;
+
+                        int child_status;
+                        waitpid(bomb_pids[i], &child_status, 0);
+
+                        close(bomb_fds[i][0]);
+
+                        shift_left_bomb(bombs, i, bomb_count);
+                        shift_left_fds(bomb_fds, i, bomb_count);
+                        shift_left_ints(bombs_active, i, bomb_count);
+                        shift_left_pids(bomb_pids, i, bomb_count);
+                        shift_left_coors(bomb_position, i, bomb_count);
+                        
+                        bomb_count--;
+
+                        bombs = realloc(bombs, bomb_count * sizeof(bd));
+                        bomb_fds = realloc(bomb_fds, bomb_count * sizeof(int) * 2);
+                        bombs_active = realloc(bombs_active, bomb_count * sizeof(int));
+                        bomb_pids = realloc(bomb_pids, bomb_count * sizeof(pid_t));
+                        bomb_position = realloc(bomb_position, bomb_count * sizeof(coordinate));
+                    }      
+                }
+            }  
+        }
     }
 
 }
