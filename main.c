@@ -32,11 +32,14 @@ int sum(int *arr, int len)
     return sum;
 }
 
+// There was a bug with arr[index] = arr[++index] because using same variable "index" twice, while it is being incremented too, is undefined
+
 void shift_left_ints(int *arr, unsigned int index, unsigned int len)
 {
     while (index < len - 1)
     {
-        arr[index] = arr[++index];
+        arr[index] = arr[index + 1];
+        index++;
     }
 }
 
@@ -44,7 +47,8 @@ void shift_left_pids(pid_t *arr, unsigned int index, unsigned int len)
 {
     while (index < len - 1)
     {
-        arr[index] = arr[++index];
+        arr[index] = arr[index + 1];
+        index++;
     }
 }
 
@@ -52,7 +56,8 @@ void shift_left_coors(coordinate *arr, unsigned int index, unsigned int len)
 {
     while (index < len - 1)
     {
-        arr[index] = arr[++index];
+        arr[index] = arr[index + 1];
+        index++;
     }
 }
 
@@ -60,7 +65,8 @@ void shift_left_bomb(bd *arr, unsigned int index, unsigned int len)
 {
     while (index < len - 1)
     {
-        arr[index] = arr[++index];
+        arr[index] = arr[index + 1];
+        index++;
     }
 }
 
@@ -75,11 +81,23 @@ void shift_left_fds(int (*arr)[2], unsigned int index, unsigned int len)
     }
 }
 
+void shift_left_bombers(bomber *arr, unsigned int index, unsigned int len)
+{
+    while (index < len - 1)
+    {
+        arr[index].argv = arr[index + 1].argv;
+        arr[index].position = arr[index + 1].position;
+        arr[index].n_args = arr[index + 1].n_args;
+        
+        index++;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     // Parse the input
     int map_width, map_height, obstacle_count, bomber_count, *bombers_alive, bombers_alive_count = 0, bomb_count = 0 /*bug was here*/, *bombs_active = NULL, bombs_active_count = 0, winner = -1;
-    obsd *obstacles;
+    obsd obstacle;
     bomber *bombers;
     pid_t *bomber_pids;
     bd *bombs = NULL;
@@ -115,13 +133,11 @@ int main(int argc, char *argv[])
 
     // OBSTACLES
 
-    obstacles = malloc(obstacle_count * sizeof(obsd));
-
     for (int i = 0; i < obstacle_count; i++)
     {
-        scanf("%d %d %d", &obstacles[i].position.x, &obstacles[i].position.y, &obstacles[i].remaining_durability);
+        scanf("%d %d %d", &obstacle.position.x, &obstacle.position.y, &obstacle.remaining_durability);
         
-        obstacle_map[obstacles[i].position.y][obstacles[i].position.x] = obstacles[i].remaining_durability;
+        obstacle_map[obstacle.position.y][obstacle.position.x] = obstacle.remaining_durability;
     }
 
     // BOMBERS
@@ -426,6 +442,31 @@ int main(int argc, char *argv[])
                     close(bomber_fds[i][0]);
                     // close(bomber_fds[i][1]); Already closed after pipeing
 
+                    for (int j = 0; j < bombers[i].n_args; j++)
+                    {
+                        free(bombers[i].argv[j]);
+                    }
+
+                    free(bombers[i].argv);
+
+                    shift_left_bombers(bombers, i, bomber_count);
+                    shift_left_fds(bomber_fds, i, bomber_count);
+                    shift_left_ints(bombers_alive, i, bomber_count);
+                    shift_left_pids(bomber_pids, i, bomber_count);
+
+                    bomber_count--;
+
+                    bombers = realloc(bombers, bomber_count * sizeof(bomber));
+                    bomber_fds = realloc(bomber_fds, bomber_count * sizeof(int) * 2);
+                    bombers_alive = realloc(bombers_alive, bomber_count * sizeof(int));
+                    bomber_pids = realloc(bomber_pids, bomber_count * sizeof(pid_t));
+
+                    // Bug fix when 0th bomber dies and winner is set to 1. When we shift the bombers left, winner index needs to shift as well.
+                    if (winner > i)
+                    {
+                        winner--;
+                    }
+
                     continue;
                 }
 
@@ -501,7 +542,11 @@ int main(int argc, char *argv[])
 
                     print_output(NULL, &out_message_print, NULL, NULL);
 
-                    if (out_message.data.planted && (bomb_pids[bomb_count - 1] = fork()))
+                    if (!out_message.data.planted)
+                    {
+                        continue;
+                    }
+                    else if (out_message.data.planted && (bomb_pids[bomb_count - 1] = fork()))
                     {
                         close(bomb_fds[bomb_count - 1][1]);
                     }
@@ -525,7 +570,7 @@ int main(int argc, char *argv[])
                     out_message.type = BOMBER_VISION;
 
                     unsigned int object_count = 0;
-                    od objects[24];
+                    od objects[25];
 
                     // TOP: in order of decreasing i (according to array indexing)
                     for (int x = bombers[i].position.x, start_y = bombers[i].position.y - 1,  end_y = start_y - 3; start_y >= 0 && start_y > end_y; start_y--)
@@ -635,6 +680,17 @@ int main(int argc, char *argv[])
 
         usleep(1000);
     }
+
+    for (int i = 0; i < map_height; i++)
+    {
+        free(bomb_map[i]);
+        free(bomber_map[i]);
+        free(obstacle_map[i]);
+    }
+
+    free(bomb_map);
+    free(bomber_map);
+    free(obstacle_map);
 
     while (bombs_active_count--)
     {
