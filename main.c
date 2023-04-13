@@ -572,6 +572,12 @@ int main(int argc, char *argv[])
                     unsigned int object_count = 0;
                     od objects[25];
 
+                    // At the bomber's position
+                    if (bomb_map[bombers[i].position.y][bombers[i].position.x])
+                    {
+                        objects[object_count++] = (od) {bombers[i].position, BOMB};
+                    }
+
                     // TOP: in order of decreasing i (according to array indexing)
                     for (int x = bombers[i].position.x, start_y = bombers[i].position.y - 1,  end_y = start_y - 3; start_y >= 0 && start_y > end_y; start_y--)
                     {
